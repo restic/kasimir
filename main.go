@@ -63,6 +63,7 @@ func main() {
 	}
 
 	addCommandCheck(cmd, &gopts, &cfg)
+	addCommandHooks(cmd, &gopts, &cfg)
 
 	flags := cmd.PersistentFlags()
 	flags.BoolVar(&gopts.Verbose, "verbose", false, "be verbose")
