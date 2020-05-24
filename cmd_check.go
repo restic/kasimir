@@ -1,8 +1,9 @@
 package main
 
 import (
-	"errors"
 	"fmt"
+	"os"
+	"text/tabwriter"
 
 	"github.com/spf13/cobra"
 )
@@ -22,13 +23,13 @@ func addCommandCheck(root *cobra.Command, gopts *GlobalOptions, cfg *Config) {
 	root.AddCommand(cmd)
 }
 
-var ErrCheckFailed = errors.New("check failed")
-
 func runCheck(gopts GlobalOptions, _ Config, _ []string) error {
 	checks, err := FilterChecks(AllChecks, gopts.DisableChecks)
 	if err != nil {
 		return err
 	}
+
+	tw := tabwriter.NewWriter(os.Stdout, 3, 8, 2, ' ', 0)
 
 	results, err := RunChecks(checks)
 
@@ -41,14 +42,16 @@ func runCheck(gopts GlobalOptions, _ Config, _ []string) error {
 			status = "✗"
 		}
 
-		s := fmt.Sprintf("%s  %v\t", status, result.Check.Name)
+		fmt.Fprintf(tw, "%s\t%v\t", status, result.Check.Name)
+
 		if gopts.Verbose {
-			s += fmt.Sprintf("%v\t", result.Check.Description)
+			fmt.Fprintf(tw, "%v\t", result.Check.Description)
 		}
 
-		s += text
-		fmt.Println(s)
+		fmt.Fprintln(tw, text)
 	}
+
+	tw.Flush()
 
 	return err
 }

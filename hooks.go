@@ -14,12 +14,12 @@ type Hook struct {
 
 var AllHooks = []Hook{
 	{
-		Name:        "run-go-mod-download",
+		Name:        "go-mod-download",
 		Description: "run 'go mod download' to make sure all Go modules are accessible",
 		Command:     []string{"go", "mod", "download"},
 	},
 	{
-		Name:        "run-go-generate",
+		Name:        "go-generate",
 		Description: "run 'go generate ./...' to make sure all generated code is up to date",
 		Command:     []string{"go", "generate", "./..."},
 	},
