@@ -28,15 +28,6 @@ type CheckResult struct {
 	Result error
 }
 
-// ErrInvalidCheckName is returned when an unknown name for a check is passed.
-type ErrInvalidCheckName struct {
-	Name string
-}
-
-func (err ErrInvalidCheckName) Error() string {
-	return fmt.Sprintf("invalid check name %q", err.Name)
-}
-
 // FilterChecks returns a list of checks without the ones listed in reject. For
 // invalid names, an error is returned.
 func FilterChecks(list []Check, reject []string) (result []Check, err error) {
@@ -49,7 +40,7 @@ func FilterChecks(list []Check, reject []string) (result []Check, err error) {
 
 	for _, name := range reject {
 		if _, ok := all[name]; !ok {
-			return nil, ErrInvalidCheckName{Name: name}
+			return nil, fmt.Errorf("invalid check name %q", name)
 		}
 
 		disabled[name] = struct{}{}
@@ -78,14 +69,6 @@ func RunChecks(checks []Check) (result []CheckResult) {
 	return result
 }
 
-type BranchError struct {
-	CurrentBranchName string
-}
-
-func (err BranchError) Error() string {
-	return fmt.Sprintf("current branch is %q instead of master", err.CurrentBranchName)
-}
-
 func CheckBranchMaster() error {
 	name, err := exec.Command("git", "branch", "--show-current").Output()
 	if err != nil {
@@ -94,7 +77,7 @@ func CheckBranchMaster() error {
 
 	branch := strings.TrimRight(string(name), "\n")
 	if branch != "master" {
-		return BranchError{CurrentBranchName: branch}
+		return fmt.Errorf("current branch is %q instead of master", branch)
 	}
 
 	return nil
