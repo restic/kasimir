@@ -22,12 +22,12 @@ type CheckResult struct {
 // AllChecks contains a list of all checks with descriptions.
 var AllChecks = []Check{
 	{
-		Name:        "check-branch-master",
+		Name:        "branch-master",
 		Description: "test if the current branch is master",
 		Run:         CheckBranchMaster,
 	},
 	{
-		Name:        "check-uncommitted-changes",
+		Name:        "uncommitted-changes",
 		Description: "test if uncommitted changes or files exist",
 		Run:         CheckUncommittedChanges,
 	},
