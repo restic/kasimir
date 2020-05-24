@@ -42,7 +42,13 @@ func runCheck(gopts GlobalOptions, _ Config, _ []string) error {
 			failedChecks++
 		}
 
-		fmt.Printf("%s  %v\t%v\t%s\n", status, result.Check.Name, result.Check.Description, text)
+		s := fmt.Sprintf("%s  %v\t", status, result.Check.Name)
+		if gopts.Verbose {
+			s += fmt.Sprintf("%v\t", result.Check.Description)
+		}
+
+		s += text
+		fmt.Println(s)
 	}
 
 	if failedChecks > 0 {

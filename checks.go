@@ -13,6 +13,12 @@ type Check struct {
 	Run         func() error
 }
 
+// CheckResult bundles a check with its result after running.
+type CheckResult struct {
+	Check
+	Result error
+}
+
 // AllChecks contains a list of all checks with descriptions.
 var AllChecks = []Check{
 	{
@@ -20,12 +26,11 @@ var AllChecks = []Check{
 		Description: "test if the current branch is master",
 		Run:         CheckBranchMaster,
 	},
-}
-
-// CheckResult bundles a check with its result after running.
-type CheckResult struct {
-	Check
-	Result error
+	{
+		Name:        "check-uncommitted-changes",
+		Description: "test if uncommitted changes or files exist",
+		Run:         CheckUncommittedChanges,
+	},
 }
 
 // FilterChecks returns a list of checks without the ones listed in reject. For
@@ -78,6 +83,20 @@ func CheckBranchMaster() error {
 	branch := strings.TrimRight(string(name), "\n")
 	if branch != "master" {
 		return fmt.Errorf("current branch is %q instead of master", branch)
+	}
+
+	return nil
+}
+
+func CheckUncommittedChanges() error {
+	buf, err := exec.Command("git", "status", "--porcelain").Output()
+	if err != nil {
+		return fmt.Errorf("unable to check for uncommitted changes: %w", err)
+	}
+
+	status := strings.TrimRight(string(buf), "\n")
+	if len(status) > 0 {
+		return fmt.Errorf("repository contains uncommitted changes or additional files")
 	}
 
 	return nil
