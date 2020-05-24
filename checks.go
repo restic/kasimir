@@ -63,15 +63,26 @@ func FilterChecks(list []Check, reject []string) (result []Check, err error) {
 }
 
 // RunChecks runs all checks.
-func RunChecks(checks []Check) (result []CheckResult) {
+func RunChecks(checks []Check) (result []CheckResult, err error) {
+	merr := &MultiError{}
+
 	for _, check := range checks {
+		err := check.Run()
+		if err != nil {
+			merr.Insert(fmt.Errorf("check %v failed: %w", check.Name, err))
+		}
+
 		result = append(result, CheckResult{
 			Check:  check,
-			Result: check.Run(),
+			Result: err,
 		})
 	}
 
-	return result
+	if merr.Length() == 0 {
+		return result, nil
+	}
+
+	return result, merr
 }
 
 func CheckBranchMaster() error {

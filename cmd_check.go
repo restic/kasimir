@@ -30,16 +30,15 @@ func runCheck(gopts GlobalOptions, _ Config, _ []string) error {
 		return err
 	}
 
-	failedChecks := 0
+	results, err := RunChecks(checks)
 
-	for _, result := range RunChecks(checks) {
+	for _, result := range results {
 		text := ""
 		status := "✓"
 
 		if result.Result != nil {
 			text = result.Result.Error()
 			status = "✗"
-			failedChecks++
 		}
 
 		s := fmt.Sprintf("%s  %v\t", status, result.Check.Name)
@@ -51,9 +50,5 @@ func runCheck(gopts GlobalOptions, _ Config, _ []string) error {
 		fmt.Println(s)
 	}
 
-	if failedChecks > 0 {
-		return ErrCheckFailed
-	}
-
-	return nil
+	return err
 }
