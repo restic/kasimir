@@ -41,9 +41,11 @@ func LoadConfig(filename string) (Config, error) {
 	if cfg.GOARCH == nil {
 		cfg.GOARCH = DefaultConfig.GOARCH
 	}
+
 	if cfg.GOOS == nil {
 		cfg.GOOS = DefaultConfig.GOOS
 	}
+
 	if cfg.GOARM == nil {
 		cfg.GOARM = DefaultConfig.GOARM
 	}

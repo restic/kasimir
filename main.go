@@ -4,63 +4,82 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 
 	"github.com/spf13/cobra"
 )
 
-// Options collects all configuration for a single run.
-type Options struct {
-	Verbose             bool
-	Debug               bool
-	Config              string
-	ConfigFileSpecified bool
+// GlobalOptions collects all configuration for a single run.
+type GlobalOptions struct {
+	Verbose       bool
+	Debug         bool
+	Config        string
+	DisableChecks []string
+
+	Version string
 }
 
 func main() {
-	var opts Options
+	var (
+		gopts GlobalOptions
+		cfg   Config
+	)
 
 	var cmd = &cobra.Command{
-		Short:         "pondi [options]",
+		Use:           "pondi [flags]",
+		Short:         "pondi",
 		Long:          "pondi builds release assets (binaries, source code archive) and creates a new release on GitHub ",
 		SilenceErrors: true,
 		SilenceUsage:  true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if cmd.Flags().Changed("config") {
-				// signal that it is an error if the config file does not exist
-				opts.ConfigFileSpecified = true
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+
+			if gopts.Version != "" {
+				matched, err := regexp.MatchString(`^\d+\.\d+\.\d+$`, gopts.Version)
+				if err != nil {
+					panic(err)
+				}
+
+				if !matched {
+					return fmt.Errorf("version %q is invalid (format: 1.2.3)", gopts.Version)
+				}
 			}
 
-			return run(opts, args)
+			cfg, err = LoadConfig(gopts.Config)
+
+			// if the config file was not explicitly passed and it does not
+			// exist, just use the default config.
+			if !cmd.Flags().Changed("config") && errors.Is(err, os.ErrNotExist) {
+				cfg = DefaultConfig
+				err = nil
+			}
+
+			if err != nil {
+				return err
+			}
+
+			return nil
 		},
 	}
 
-	flags := cmd.Flags()
-	flags.BoolVar(&opts.Verbose, "verbose", false, "be verbose")
-	flags.BoolVar(&opts.Debug, "debug", false, "print debug messages")
-	flags.StringVar(&opts.Config, "config", ".pondi.yml", "load configuration from `file`")
+	addCommandCheck(cmd, &gopts, &cfg)
 
-	err := cmd.Execute()
+	flags := cmd.PersistentFlags()
+	flags.BoolVar(&gopts.Verbose, "verbose", false, "be verbose")
+	flags.BoolVar(&gopts.Debug, "debug", false, "print debug messages")
+	flags.StringVar(&gopts.Config, "config", ".pondi.yml", "load configuration from `file`")
+	flags.StringSliceVar(&gopts.DisableChecks, "disable-checks", nil, "disable checks `name1,name2,[...]`")
+
+	flags.StringVar(&gopts.Version, "version", "", "release version (format: `1.2.3`)")
+
+	err := cmd.MarkPersistentFlagRequired("version")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "exiting, error: %v\n", err)
-	}
-}
-
-func run(opts Options, args []string) error {
-	var cfg Config
-	var err error
-
-	// try to load the config file, fall back to the default config if the file
-	// does not exist and the file name has not been set manually
-	cfg, err = LoadConfig(opts.Config)
-	if errors.Is(err, os.ErrNotExist) && !opts.ConfigFileSpecified {
-		cfg = DefaultConfig
-		err = nil
+		panic(err)
 	}
 
+	err = cmd.Execute()
 	if err != nil {
-		return err
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
 	}
-
-	fmt.Printf("main, config: %#v\n", cfg)
-	return nil
 }
