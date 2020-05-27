@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 )
 
@@ -23,6 +24,11 @@ var AllHooks = []Hook{
 		Description: "run 'go generate ./...' to make sure all generated code is up to date",
 		Command:     []string{"go", "generate", "./..."},
 	},
+	{
+		Name:        "gofmt",
+		Description: "run 'gofmt -w .' to format all source code",
+		Command:     []string{"gofmt", "-w", "."},
+	},
 }
 
 // RunHooks run all hooks.
@@ -30,6 +36,7 @@ func RunHooks() error {
 	for _, hook := range AllHooks {
 		fmt.Printf("run %v\n", hook.Name)
 		cmd := exec.Command(hook.Command[0], hook.Command[1:]...)
+		cmd.Stderr = os.Stderr
 		err := cmd.Run()
 
 		if err != nil {

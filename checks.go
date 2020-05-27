@@ -31,6 +31,11 @@ var AllChecks = []Check{
 		Description: "test if uncommitted changes or files exist",
 		Run:         CheckUncommittedChanges,
 	},
+	{
+		Name:        "gofmt",
+		Description: "test if code is formatted with 'gofmt'",
+		Run:         CheckGofmt,
+	},
 }
 
 // FilterChecks returns a list of checks without the ones listed in reject. For
@@ -69,7 +74,7 @@ func RunChecks(checks []Check) (result []CheckResult, err error) {
 	for _, check := range checks {
 		err := check.Run()
 		if err != nil {
-			merr.Insert(fmt.Errorf("check %v failed: %w", check.Name, err))
+			merr.Insert(fmt.Errorf("%v failed: %w", check.Name, err))
 		}
 
 		result = append(result, CheckResult{
@@ -108,6 +113,22 @@ func CheckUncommittedChanges() error {
 	status := strings.TrimRight(string(buf), "\n")
 	if len(status) > 0 {
 		return fmt.Errorf("repository contains uncommitted changes or additional files")
+	}
+
+	return nil
+}
+
+func CheckGofmt() error {
+	buf, err := exec.Command("gofmt", "-l", ".").Output()
+	if err != nil {
+		return fmt.Errorf("running 'gofmt' failed: %w", err)
+	}
+
+	text := strings.TrimRight(string(buf), "\n")
+	text = strings.ReplaceAll(text, "\n", ", ")
+
+	if len(text) > 0 {
+		return fmt.Errorf("repository contains files not formatted with gofmt: %v", text)
 	}
 
 	return nil
