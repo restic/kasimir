@@ -52,6 +52,7 @@ func runCheck(gopts GlobalOptions, _ Config, _ []string) error {
 	}
 
 	tw.Flush()
+	fmt.Println()
 
 	return err
 }
