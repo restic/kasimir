@@ -16,6 +16,7 @@ Goals (what pondi should do once it's finished):
  * Create a `SHA256SUMS` of all created files and and sign it
  * Generate release notes using `calens`
  * Create a release on GitHub with the generated release notes and upload the assets
+ * Build and push Docker images
 
 The program should be idempotent, so if you re-run pondi it should continue where it left of instead of starting from the beginning again.
 
