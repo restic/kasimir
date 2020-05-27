@@ -10,7 +10,13 @@ import (
 type Check struct {
 	Name        string
 	Description string
-	Run         func() error
+	Run         func(CheckConfig) error
+}
+
+// CheckConfig contains information needed to perform checks.
+type CheckConfig struct {
+	Dir     string
+	Version string
 }
 
 // CheckResult bundles a check with its result after running.
@@ -23,18 +29,23 @@ type CheckResult struct {
 var AllChecks = []Check{
 	{
 		Name:        "branch-master",
-		Description: "test if the current branch is master",
+		Description: "the current branch is master",
 		Run:         CheckBranchMaster,
 	},
 	{
 		Name:        "uncommitted-changes",
-		Description: "test if uncommitted changes or files exist",
+		Description: "no uncommitted changes or files exist",
 		Run:         CheckUncommittedChanges,
 	},
 	{
 		Name:        "gofmt",
-		Description: "test if code is formatted with 'gofmt'",
+		Description: "code is formatted with 'gofmt'",
 		Run:         CheckGofmt,
+	},
+	{
+		Name:        "tag-exists",
+		Description: "version tag does not exist",
+		Run:         CheckTagExists,
 	},
 }
 
@@ -68,11 +79,11 @@ func FilterChecks(list []Check, reject []string) (result []Check, err error) {
 }
 
 // RunChecks runs all checks.
-func RunChecks(checks []Check) (result []CheckResult, err error) {
+func RunChecks(cfg CheckConfig, checks []Check) (result []CheckResult, err error) {
 	merr := &MultiError{}
 
 	for _, check := range checks {
-		err := check.Run()
+		err := check.Run(cfg)
 		if err != nil {
 			merr.Insert(fmt.Errorf("%v failed: %w", check.Name, err))
 		}
@@ -90,8 +101,11 @@ func RunChecks(checks []Check) (result []CheckResult, err error) {
 	return result, merr
 }
 
-func CheckBranchMaster() error {
-	name, err := exec.Command("git", "branch", "--show-current").Output()
+func CheckBranchMaster(cfg CheckConfig) error {
+	cmd := exec.Command("git", "branch", "--show-current")
+	cmd.Dir = cfg.Dir
+
+	name, err := cmd.Output()
 	if err != nil {
 		return fmt.Errorf("unable to find current branch: %w", err)
 	}
@@ -104,8 +118,11 @@ func CheckBranchMaster() error {
 	return nil
 }
 
-func CheckUncommittedChanges() error {
-	buf, err := exec.Command("git", "status", "--porcelain").Output()
+func CheckUncommittedChanges(cfg CheckConfig) error {
+	cmd := exec.Command("git", "status", "--porcelain")
+	cmd.Dir = cfg.Dir
+
+	buf, err := cmd.Output()
 	if err != nil {
 		return fmt.Errorf("unable to check for uncommitted changes: %w", err)
 	}
@@ -118,8 +135,11 @@ func CheckUncommittedChanges() error {
 	return nil
 }
 
-func CheckGofmt() error {
-	buf, err := exec.Command("gofmt", "-l", ".").Output()
+func CheckGofmt(cfg CheckConfig) error {
+	cmd := exec.Command("gofmt", "-l", ".")
+	cmd.Dir = cfg.Dir
+
+	buf, err := cmd.Output()
 	if err != nil {
 		return fmt.Errorf("running 'gofmt' failed: %w", err)
 	}
@@ -129,6 +149,24 @@ func CheckGofmt() error {
 
 	if len(text) > 0 {
 		return fmt.Errorf("repository contains files not formatted with gofmt: %v", text)
+	}
+
+	return nil
+}
+
+func CheckTagExists(cfg CheckConfig) error {
+	cmd := exec.Command("git", "tag", "-l", "v"+cfg.Version)
+	cmd.Dir = cfg.Dir
+
+	buf, err := cmd.Output()
+	if err != nil {
+		return fmt.Errorf("running 'git tag -l %v' failed: %w", cfg.Version, err)
+	}
+
+	tag := strings.TrimRight(string(buf), "\n")
+	fmt.Printf("tag text is %q, version %q\n", tag, cfg.Version)
+	if tag != "" {
+		return fmt.Errorf("tag %q already exists", cfg.Version)
 	}
 
 	return nil

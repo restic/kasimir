@@ -31,7 +31,12 @@ func runCheck(gopts GlobalOptions, _ Config, _ []string) error {
 
 	tw := tabwriter.NewWriter(os.Stdout, 3, 8, 2, ' ', 0)
 
-	results, err := RunChecks(checks)
+	cfg := CheckConfig{
+		Dir:     ".",
+		Version: gopts.Version,
+	}
+
+	results, err := RunChecks(cfg, checks)
 
 	for _, result := range results {
 		text := ""
