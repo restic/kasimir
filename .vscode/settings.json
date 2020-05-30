@@ -1,0 +1,16 @@
+{
+    "cSpell.includeRegExpList": [
+        "string",
+        "CStyleComment"
+    ],
+    "cSpell.words": [
+        "calens",
+        "pondi"
+    ],
+    "go.lintTool": "golangci-lint",
+    "go.lintFlags": [
+        "--enable-all",
+        "--disable",
+        "gochecknoglobals,goerr113"
+    ]
+}
