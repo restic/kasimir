@@ -5,6 +5,7 @@
     ],
     "cSpell.words": [
         "calens",
+        "gofmt",
         "pondi"
     ],
     "go.lintTool": "golangci-lint",
