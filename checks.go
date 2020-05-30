@@ -164,7 +164,6 @@ func CheckTagExists(cfg CheckConfig) error {
 	}
 
 	tag := strings.TrimRight(string(buf), "\n")
-	fmt.Printf("tag text is %q, version %q\n", tag, cfg.Version)
 	if tag != "" {
 		return fmt.Errorf("tag %q already exists", cfg.Version)
 	}
