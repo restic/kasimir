@@ -12,7 +12,12 @@ func addCommandHooks(root *cobra.Command, gopts *GlobalOptions, cfg *Config) {
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return RunHooks()
+			cfg := CheckConfig{
+				Dir:     ".",
+				Version: gopts.Version,
+			}
+
+			return RunHooks(cfg)
 		},
 	}
 

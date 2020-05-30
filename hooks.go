@@ -32,7 +32,13 @@ var AllHooks = []Hook{
 }
 
 // RunHooks run all hooks.
-func RunHooks() error {
+func RunHooks(cfg CheckConfig) error {
+	// check for uncommitted changes before running hooks
+	err := CheckUncommittedChanges(cfg)
+	if err != nil {
+		return err
+	}
+
 	for _, hook := range AllHooks {
 		fmt.Printf("run %v\n", hook.Name)
 		cmd := exec.Command(hook.Command[0], hook.Command[1:]...)
@@ -44,5 +50,6 @@ func RunHooks() error {
 		}
 	}
 
-	return nil
+	// afterwards, check if the repository contains uncommitted changes
+	return CheckUncommittedChanges(cfg)
 }
